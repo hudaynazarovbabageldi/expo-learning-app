@@ -1,0 +1,47 @@
+import { ItemType } from "@/types/Item.type";
+
+export type ProductItemType = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  shortDescription: string;
+  sku: string;
+  price: string;
+  comparePrice: string;
+  costPrice: string;
+  stock: number;
+  lowStockThreshold: number;
+  weight: number;
+  dimensions: {
+    length: number;
+    width: number;
+    height: number;
+  };
+  images: string[];
+  thumbnail: string;
+  categoryId: string;
+  vendorId: null | string;
+  brandId: string;
+  tags: string[];
+  isActive: boolean;
+  isFeatured: boolean;
+  isDigital: boolean;
+  downloadUrl: null;
+  taxable: true;
+  taxRate: string;
+  rating: string;
+  reviewCount: number;
+  viewCount: number;
+  soldCount: number;
+  publishedAt: null;
+  createdAt: string;
+  updatedAt: string;
+  category: ItemType;
+  discountPercentage: number;
+  inStock: boolean;
+  isLowStock: boolean;
+  metaTitle: string;
+  metaDescription: string;
+  locale: string;
+};

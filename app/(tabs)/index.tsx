@@ -1,107 +1,168 @@
-import { Image } from "expo-image";
-import { Platform, StyleSheet } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import {
+  ActivityIndicator,
+  FlatList,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
-import { HelloWave } from "@/components/hello-wave";
-import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { ThemedText } from "@/components/themed-text";
-import { ThemedView } from "@/components/themed-view";
-import { Link } from "expo-router";
+import { ProductCard } from "@/components/product-card";
+import { useGetProduct } from "@/services/products/services/useGetProduct.query";
+import { useGetProducts } from "@/services/products/services/useGetProducts.query";
+import { ProductType } from "@/services/products/types/Product.type";
 
-export default function HomeScreen() {
+export default function HomePage() {
+  const navigation = useNavigation();
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useGetProducts({ limit: 10 });
+
+  const productDetailData = useGetProduct(
+    "fc02b6f7-8960-4a40-9ba8-ec4b4b58dcac",
+  );
+
+  const products = data?.pages.flatMap((page) => page.items) ?? [];
+
+  const renderItem = ({ item }: { item: ProductType }) => (
+    <View style={styles.cardWrapper}>
+      <ProductCard
+        onPress={() =>
+          navigation.navigate("products/[id]", {
+            id: item.id,
+          })
+        }
+        product={item}
+      />
+    </View>
+  );
+  const handleEndReached = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error instanceof Error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.subtitle}>Could not load products</Text>
+        <Text style={styles.secondary}>{error.message}</Text>
+        <Text style={styles.link} onPress={() => refetch()}>
+          Try again
+        </Text>
+      </View>
+    );
+  }
+
+  console.log("productItemData: ", productDetailData?.data);
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
-      headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
-      }
-    >
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit{" "}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText>{" "}
-          to see changes. Press{" "}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: "cmd + d",
-              android: "cmd + m",
-              web: "F12",
-            })}
-          </ThemedText>{" "}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction
-              title="Action"
-              icon="cube"
-              onPress={() => alert("Action pressed")}
-            />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert("Share pressed")}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert("Delete pressed")}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
-
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">
-            npm run reset-project
-          </ThemedText>{" "}
-          to get a fresh <ThemedText type="defaultSemiBold">app</ThemedText>{" "}
-          directory. This will move the current{" "}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{" "}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <>
+      <Text>Most Liked Products</Text>
+      <FlatList
+        contentContainerStyle={styles.contentContainer}
+        data={products}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.4}
+        showsVerticalScrollIndicator={false}
+        style={styles.list}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: "space-between" }}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.title}>HomePage</Text>
+            <Text style={styles.secondary}>
+              Browse the latest products and open any card for full details.
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.subtitle}>No products yet</Text>
+            <Text style={styles.secondary}>
+              Products will appear here when the API returns data.
+            </Text>
+          </View>
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View style={styles.footer}>
+              <ActivityIndicator />
+            </View>
+          ) : (
+            <View style={styles.footerSpacing} />
+          )
+        }
+      />
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: "row",
+  centered: {
     alignItems: "center",
-    gap: 8,
+    flex: 1,
+    justifyContent: "center",
+    padding: 16,
   },
-  stepContainer: {
-    gap: 8,
+  contentContainer: {
+    padding: 16,
+  },
+  emptyState: {
+    alignItems: "center",
+    paddingVertical: 32,
+  },
+  footer: {
+    paddingVertical: 12,
+  },
+  footerSpacing: {
+    height: 12,
+  },
+  header: {
     marginBottom: 8,
+    marginTop: 24,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: "absolute",
+  list: {
+    flex: 1,
+  },
+
+  // 👇 simple text styles instead of themed components
+  title: {
+    fontSize: 22,
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  secondary: {
+    color: "#666",
+    marginTop: 4,
+  },
+  link: {
+    color: "blue",
+    marginTop: 8,
+  },
+  cardWrapper: {
+    flex: 1,
+    marginBottom: 12,
+    marginHorizontal: 4,
   },
 });
